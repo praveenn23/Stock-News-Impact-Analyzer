@@ -6,3 +6,4 @@ nltk
 joblib
 feedparser
 flask 
+gunicorn
