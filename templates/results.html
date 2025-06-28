@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results - Stock News Impact Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 100%;
+            overflow: hidden;
+        }
+        .header-section {
+            background: linear-gradient(45deg, #2c3e50, #3498db);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
+        }
+        .content-section {
+            padding: 1.5rem;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .sentiment-card {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        .sentiment-card:hover {
+            transform: translateY(-2px);
+        }
+        .sentiment-positive {
+            border-left: 5px solid #28a745;
+        }
+        .sentiment-negative {
+            border-left: 5px solid #dc3545;
+        }
+        .sentiment-neutral {
+            border-left: 5px solid #ffc107;
+        }
+        .stats-card {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            height: 300px;
+        }
+        .btn-back {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            border-radius: 50px;
+            padding: 8px 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .impact-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .headline-text {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        .compact-card {
+            padding: 1rem;
+        }
+        .compact-card .card-body {
+            padding: 0.75rem;
+        }
+        .compact-card h6 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        @media (max-width: 768px) {
+            .content-section {
+                padding: 1rem;
+                max-height: none;
+            }
+            .header-section {
+                padding: 1rem;
+            }
+            .chart-container {
+                height: 250px;
+                margin-bottom: 1rem;
+            }
+            .stats-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-3">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="main-container">
+                    <!-- Header -->
+                    <div class="header-section">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h2 class="fw-bold mb-1">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    Analysis Results
+                                </h2>
+                                <p class="mb-0 small">
+                                    {% if stock_ticker %}
+                                        Analysis for <strong>{{ stock_ticker }}</strong> | 
+                                    {% endif %}
+                                    Analyzed {{ analyses|length }} headlines | 
+                                    <i class="fas fa-clock me-1"></i>{{ analysis_time }}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="/" class="btn btn-back">
+                                    <i class="fas fa-arrow-left me-1"></i>New Analysis
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="content-section">
+                        <!-- Overall Market Sentiment -->
+                        <div class="stats-card">
+                            <h5><i class="fas fa-globe me-2"></i>Overall Market Sentiment</h5>
+                            <h3 class="mb-0">{{ overall_sentiment }}</h3>
+                        </div>
+
+                        <!-- Sentiment Distribution Chart -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <h6 class="mb-3"><i class="fas fa-chart-pie me-2"></i>Sentiment Distribution</h6>
+                                    <canvas id="sentimentChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <h6 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Sentiment Breakdown</h6>
+                                    <div class="row text-center h-100 align-items-center">
+                                        <div class="col-4">
+                                            <div class="text-success">
+                                                <h4>{{ rise_count }}</h4>
+                                                <small>Rise</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-danger">
+                                                <h4>{{ fall_count }}</h4>
+                                                <small>Fall</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-warning">
+                                                <h4>{{ stable_count }}</h4>
+                                                <small>Stable</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stock and Sector Impacts -->
+                        {% if stock_impacts and stock_impacts|length > 0 %}
+                        <div class="section-title">
+                            <i class="fas fa-chart-bar me-2"></i>Stock-Specific Impacts
+                        </div>
+                        <div class="row">
+                            {% for ticker, impacts in stock_impacts.items() %}
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="card sentiment-card compact-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ ticker }}</h6>
+                                        <div class="badge-container">
+                                            <span class="badge bg-success impact-badge">Rise: {{ impacts.rise }}</span>
+                                            <span class="badge bg-danger impact-badge">Fall: {{ impacts.fall }}</span>
+                                            <span class="badge bg-warning impact-badge">Stable: {{ impacts.stable }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if sector_impacts and sector_impacts|length > 0 %}
+                        <div class="section-title">
+                            <i class="fas fa-industry me-2"></i>Sector Impacts
+                        </div>
+                        <div class="row">
+                            {% for sector, impacts in sector_impacts.items() %}
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="card sentiment-card compact-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ sector }}</h6>
+                                        <div class="badge-container">
+                                            <span class="badge bg-success impact-badge">Rise: {{ impacts.rise }}</span>
+                                            <span class="badge bg-danger impact-badge">Fall: {{ impacts.fall }}</span>
+                                            <span class="badge bg-warning impact-badge">Stable: {{ impacts.stable }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Detailed Headline Analysis -->
+                        {% if analyses and analyses|length > 0 %}
+                        <div class="section-title">
+                            <i class="fas fa-newspaper me-2"></i>Detailed Headline Analysis
+                        </div>
+                        {% for analysis in analyses %}
+                        <div class="card sentiment-card 
+                            {% if 'rise' in analysis.sentiment.lower() %}sentiment-positive
+                            {% elif 'fall' in analysis.sentiment.lower() %}sentiment-negative
+                            {% else %}sentiment-neutral{% endif %}">
+                            <div class="card-body compact-card">
+                                <h6 class="card-title headline-text">
+                                    <i class="fas fa-heading me-2"></i>{{ analysis.headline }}
+                                </h6>
+                                <p class="card-text mb-2">
+                                    <strong>Sentiment:</strong> 
+                                    <span class="badge 
+                                        {% if 'rise' in analysis.sentiment.lower() %}bg-success
+                                        {% elif 'fall' in analysis.sentiment.lower() %}bg-danger
+                                        {% else %}bg-warning{% endif %}">
+                                        {{ analysis.sentiment }}
+                                    </span>
+                                </p>
+                                
+                                {% if analysis.analysis and analysis.analysis|length > 0 %}
+                                <div class="mb-2">
+                                    <strong>Impact Analysis:</strong>
+                                    <ul class="list-unstyled mt-1 mb-2">
+                                        {% for impact in analysis.analysis %}
+                                        <li class="small"><i class="fas fa-arrow-right me-2 text-primary"></i>{{ impact }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+
+                                {% if analysis.affected_stocks and analysis.affected_stocks|length > 0 %}
+                                <div class="mb-2">
+                                    <strong>Affected Stocks:</strong>
+                                    <div class="badge-container mt-1">
+                                        {% for stock in analysis.affected_stocks %}
+                                        <span class="badge bg-info">{{ stock.ticker }} ({{ stock.company }})</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                {% if analysis.affected_sectors and analysis.affected_sectors|length > 0 %}
+                                <div class="mb-2">
+                                    <strong>Affected Sectors:</strong>
+                                    <div class="badge-container mt-1">
+                                        {% for sector in analysis.affected_sectors %}
+                                        <span class="badge bg-secondary">{{ sector }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No analysis results available. Please try again with different parameters.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sentiment Distribution Chart
+        const ctx = document.getElementById('sentimentChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Rise', 'Fall', 'Stable'],
+                datasets: [{
+                    data: [{{ rise_count }}, {{ fall_count }}, {{ stable_count }}],
+                    backgroundColor: [
+                        '#28a745',
+                        '#dc3545',
+                        '#ffc107'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

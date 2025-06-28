@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock News Impact Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        .hero-section {
+            background: linear-gradient(45deg, #2c3e50, #3498db);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 3rem 2rem;
+        }
+        .form-section {
+            padding: 3rem 2rem;
+        }
+        .btn-analyze {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            border-radius: 50px;
+            padding: 12px 40px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+        }
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1rem 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .stock-input {
+            border-radius: 25px;
+            border: 2px solid #e9ecef;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+        }
+        .stock-input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        .modal-lg {
+            max-width: 900px;
+        }
+        .stock-list-item {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .stock-list-item:hover {
+            background: #f0f4ff;
+        }
+        .tradingview-widget-container {
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <div class="main-container">
+                    <!-- Hero Section -->
+                    <div class="hero-section text-center">
+                        <h1 class="display-4 fw-bold mb-3">
+                            <i class="fas fa-chart-line me-3"></i>
+                            Stock News Impact Analyzer
+                        </h1>
+                        <p class="lead mb-0">
+                            Analyze financial news headlines and predict their impact on stock prices using AI-powered sentiment analysis
+                        </p>
+                    </div>
+
+                    <!-- Form Section -->
+                    <div class="form-section">
+                        <div class="row">
+                            <div class="col-md-8 mx-auto">
+                                <form action="/analyze" method="POST" class="text-center">
+                                    <div class="mb-4">
+                                        <label for="stock_ticker" class="form-label h5 mb-3">
+                                            <i class="fas fa-search me-2"></i>
+                                            Enter Stock Ticker (Optional)
+                                        </label>
+                                        <input 
+                                            type="text" 
+                                            class="form-control stock-input" 
+                                            id="stock_ticker" 
+                                            name="stock_ticker" 
+                                            placeholder="e.g., AAPL, TSLA, GOOGL (leave empty for general market analysis)"
+                                            maxlength="10"
+                                        >
+                                        <div class="form-text">
+                                            Leave empty to analyze all recent financial news headlines
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-analyze btn-lg text-white">
+                                        <i class="fas fa-brain me-2"></i>
+                                        Analyze News Impact
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Features Section -->
+                        <div class="row mt-5">
+                            <div class="col-md-6">
+                                <a href="https://finance.yahoo.com/" target="_blank" style="text-decoration:none; color:inherit;">
+                                    <div class="feature-card text-center">
+                                        <i class="fas fa-newspaper fa-3x text-primary mb-3"></i>
+                                        <h5>Real-time News</h5>
+                                        <p class="text-muted">Scrapes latest financial headlines from major news sources</p>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="feature-card text-center" id="getStocksBtn" data-bs-toggle="modal" data-bs-target="#stocksModal">
+                                    <i class="fas fa-list fa-3x text-warning mb-3"></i>
+                                    <h5>Get List of Stocks</h5>
+                                    <p class="text-muted">View stocks in recent news and see live TradingView data</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- API Info -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-code me-2"></i>API Access Available</h6>
+                                    <p class="mb-2">Use our REST API for programmatic access:</p>
+                                    <ul class="mb-0">
+                                        <li><code>/api/analyze?ticker=AAPL</code> - Analyze specific stock</li>
+                                        <li><code>/api/stocks</code> - Get list of stocks in recent news</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stocks Modal -->
+    <div class="modal fade" id="stocksModal" tabindex="-1" aria-labelledby="stocksModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="stocksModalLabel"><i class="fas fa-list me-2"></i>Stocks in Recent News</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="stocksList" class="mb-4">
+              <div class="text-center text-muted">Loading stocks...</div>
+            </div>
+            <div id="tradingViewContainer" class="tradingview-widget-container" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="text-center py-3" style="background:rgba(44,62,80,0.95); color:#fff; position:relative; flex-shrink: 0; left: 0; bottom:0; width:100%; z-index:9999; font-size:1rem;">
+        &copy; {{ year }} Praveen Kumar. All rights reserved.
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Fetch stocks when modal opens
+      document.getElementById('stocksModal').addEventListener('show.bs.modal', function () {
+        fetch('/api/stocks')
+          .then(res => res.json())
+          .then(data => {
+            const stocksList = document.getElementById('stocksList');
+            if (data.status === 'success' && data.stocks.length > 0) {
+              stocksList.innerHTML = '<div class="row">' +
+                data.stocks.map(ticker => `
+                  <div class="col-md-3 col-6 mb-2">
+                    <div class="stock-list-item text-center border" onclick="showTradingView('${ticker}')">
+                      <span class="fw-bold">${ticker}</span>
+                    </div>
+                  </div>
+                `).join('') + '</div>';
+            } else {
+              stocksList.innerHTML = '<div class="text-center text-danger">No stocks found in recent news.</div>';
+            }
+            document.getElementById('tradingViewContainer').style.display = 'none';
+          });
+      });
+
+      // Show TradingView widget for selected stock
+      function showTradingView(ticker) {
+        const container = document.getElementById('tradingViewContainer');
+        container.style.display = 'block';
+        container.innerHTML = `
+          <div class="mb-2 text-center">
+            <span class="fw-bold">Live Chart for <span class="text-primary">${ticker}</span></span>
+          </div>
+          <div id="tv-widget"></div>
+        `;
+        // Remove any previous widget
+        if (window.tvWidgetScript) window.tvWidgetScript.remove();
+        // Add TradingView widget script
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.src = 'https://s3.tradingview.com/tv.js';
+        script.onload = function() {
+          new TradingView.widget({
+            "width": "100%",
+            "height": 400,
+            "symbol": ticker,
+            "interval": "D",
+            "timezone": "Etc/UTC",
+            "theme": "light",
+            "style": "1",
+            "locale": "en",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "hide_top_toolbar": false,
+            "save_image": false,
+            "container_id": "tv-widget"
+          });
+        };
+        document.body.appendChild(script);
+        window.tvWidgetScript = script;
+      }
+
+      // Set year dynamically
+      document.addEventListener('DOMContentLoaded', function() {
+        var year = new Date().getFullYear();
+        document.querySelectorAll('footer').forEach(f => f.innerHTML = f.innerHTML.replace('{{ year }}', year));
+      });
+    </script>
+</body>
+</html> 
