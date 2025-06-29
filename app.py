@@ -15,12 +15,15 @@ def index():
     """Main page with form for stock analysis"""
     return render_template('index.html')
 
-@app.route('/analyze', methods=['POST'])
+@app.route('/analyze', methods=['GET', 'POST'])
 def analyze():
     """Analyze news headlines and return results"""
     try:
-        # Get user input
-        stock_ticker = request.form.get('stock_ticker', '').upper().strip()
+        # Get user input from form (POST) or query string (GET)
+        if request.method == 'POST':
+            stock_ticker = request.form.get('stock_ticker', '').upper().strip()
+        else:
+            stock_ticker = request.args.get('stock_ticker', '').upper().strip()
         
         # Fetch headlines
         print("Fetching headlines...")
